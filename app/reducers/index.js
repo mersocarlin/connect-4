@@ -1,11 +1,9 @@
 import { combineReducers } from 'redux';
-import counter from './counter';
-import todos from './todos';
+import connect4 from './connect4';
 
 
 const rootReducer = combineReducers({
-  counter,
-  todos,
+  connect4,
 });
 
 
