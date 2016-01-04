@@ -4,7 +4,7 @@
   "description": "connect-4 using React and PIXI.js",
   "author": "Hemerson Carlin <mersocarlin@gmail.com>",
   "scripts": {
-    "test": "./node_modules/.bin/eslint app/",
+    "lint": "./node_modules/.bin/eslint app/",
     "build": "npm run test && ./node_modules/.bin/webpack -p",
     "dev": "./node_modules/.bin/webpack-dev-server --inline --hot"
   },
