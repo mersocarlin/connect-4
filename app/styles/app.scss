@@ -7,5 +7,7 @@ $fa-font-path: '~font-awesome/fonts';
 @import './common';
 
 /* Components */
+@import './components/board';
+@import './components/board-piece';
 
 /* Containers */

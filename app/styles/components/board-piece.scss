@@ -1,6 +1,15 @@
 .board-piece {
-  border: 1px solid red;
+  background: $piece-bg;
+  border: 1px solid #ddd;
   float: left;
-  height: 3em;
-  width: 3em;
+  height: 4em;
+  width: 4em;
+
+  &.bg-1 {
+    background: $red-piece;
+  }
+
+  &.bg-2 {
+    background: $yellow-piece;
+  }
 }
