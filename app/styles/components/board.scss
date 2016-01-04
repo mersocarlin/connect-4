@@ -1,4 +1,7 @@
 .board {
+  margin: 4em auto 0 auto;
+  width: $piece-size * 7 + 14;
+
   .board-piece {
     &:nth-child(8),
     &:nth-child(15),
