@@ -1,6 +1,7 @@
 
 export const BOARD_SIZE = 7;
 export const FINISH_SIZE = 4;
+export const PIECE_SIZE = 80;
 
 export default class Board {
   constructor () {
