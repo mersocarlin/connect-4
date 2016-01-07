@@ -17,13 +17,28 @@ import { BOARD_SIZE, PIECE_SIZE } from '../domain/board';
 import '../scripts/pixi.min.js';
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
+const Texture = PIXI.Texture;
 const size = PIECE_SIZE * BOARD_SIZE;
 const renderer = new WebGLRenderer(size, size);
-renderer.backgroundColor = 0x0083cd;
 const stage = new Container();
 
 
 class Home extends Component {
+
+  componentWillMount () {
+    renderer.backgroundColor = 0x0083cd;
+
+    if (!document.getElementsByTagName('canvas').length) {
+      document.body.appendChild(renderer.view);
+    }
+
+    const animate = () => {
+      renderer.render(stage);
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }
 
   onBoardClick (col) {
     const { connect4 } = this.props;
@@ -54,14 +69,14 @@ class Home extends Component {
         break;
     }
 
-    return new PIXI.Texture.fromImage(img);
+    return new Texture.fromImage(img);
   }
 
   playWithYellow () {
     setTimeout(() => {
       const col = Math.floor((Math.random() * BOARD_SIZE));
       this.props.dispatch(playWithYellow(col));
-    }, 1 * 1000);
+    }, 500);
   }
 
   handleNewGameClick () {
@@ -127,17 +142,6 @@ class Home extends Component {
     // );
 
     this.renderPIXIBoard();
-
-    if (!document.getElementsByTagName('canvas').length) {
-      document.body.appendChild(renderer.view);
-    }
-
-    const animate = () => {
-      renderer.render(stage);
-      requestAnimationFrame(animate);
-    };
-
-    requestAnimationFrame(animate);
 
     return (
       <div className="app-page page-home">
