@@ -23,8 +23,8 @@ export default function counter (state = initialState, action) {
       board.initiate();
 
       return {
-        ...state,
-        board
+        ...initialState,
+        board,
       };
     case PLAY_WITH_RED:
     case PLAY_WITH_YELLOW:
