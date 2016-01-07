@@ -15,11 +15,13 @@ import { RED_TURN, YELLOW_TURN } from '../reducers/connect4';
 import { BOARD_SIZE, PIECE_SIZE } from '../domain/board';
 
 import '../scripts/pixi.min.js';
+
+const boardPadding = 150;
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
 const Texture = PIXI.Texture;
 const size = PIECE_SIZE * BOARD_SIZE;
-const renderer = new WebGLRenderer(size, size);
+const renderer = new WebGLRenderer(size + boardPadding, size + boardPadding);
 const stage = new Container();
 
 
@@ -38,6 +40,19 @@ class Home extends Component {
     };
 
     requestAnimationFrame(animate);
+
+    this.setupButton();
+  }
+
+  setupButton () {
+    const text = new PIXI.Text('New Game', { font : '20px Arial', fill : 0xffffff, align : 'center' });
+    text.x = 20;
+    text.y = 20;
+    text.interactive = true;
+    text.click = () => {
+      this.props.dispatch(newGame());
+    }
+    stage.addChild(text);
   }
 
   onBoardClick (col) {
@@ -79,10 +94,6 @@ class Home extends Component {
     }, 500);
   }
 
-  handleNewGameClick () {
-    this.props.dispatch(newGame());
-  }
-
   renderPIXIBoard () {
     const { connect4 } = this.props;
     const { board } = connect4;
@@ -94,8 +105,8 @@ class Home extends Component {
         const texture = this.getTextureByValue(board.getValueAt(row, col));
 
         const piece = new Sprite(texture);
-        piece.x = col * PIECE_SIZE;
-        piece.y = rowPos * PIECE_SIZE;
+        piece.x = boardPadding / 2 + col * PIECE_SIZE;
+        piece.y = boardPadding / 2 + rowPos * PIECE_SIZE;
         piece.interactive = true;
 
         piece.mousedown = (e) => {
@@ -145,7 +156,6 @@ class Home extends Component {
 
     return (
       <div className="app-page page-home">
-        <a onClick={::this.handleNewGameClick}>New Game</a>
       </div>
     );
   }
