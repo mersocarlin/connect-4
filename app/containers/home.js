@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import greenIMG from '../img/green.png';
 import redIMG from '../img/red.png';
 import yellowIMG from '../img/yellow.png';
 import emptyIMG from '../img/empty.png';
@@ -18,6 +19,7 @@ const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
 const size = PIECE_SIZE * BOARD_SIZE;
 const renderer = new WebGLRenderer(size, size);
+renderer.backgroundColor = 0x0083cd;
 const stage = new Container();
 
 
@@ -26,15 +28,11 @@ class Home extends Component {
   onBoardClick (col) {
     const { connect4 } = this.props;
 
-    switch (connect4.playingNow) {
-      default:
-      case RED_TURN:
-        this.props.dispatch(playWithRed(col));
-        break;
-      case YELLOW_TURN:
-        this.props.dispatch(playWithYellow(col));
-        break;
+    if (connect4.playingNow !== RED_TURN) {
+      return;
     }
+
+    this.props.dispatch(playWithRed(col));
   }
 
   getTextureByValue (type) {
@@ -51,9 +49,19 @@ class Home extends Component {
       case 2:
         img = yellowIMG;
         break;
+      case 3:
+        img = greenIMG;
+        break;
     }
 
     return new PIXI.Texture.fromImage(img);
+  }
+
+  playWithYellow () {
+    setTimeout(() => {
+      const col = Math.floor((Math.random() * BOARD_SIZE));
+      this.props.dispatch(playWithYellow(col));
+    }, 1 * 1000);
   }
 
   handleNewGameClick () {
@@ -69,24 +77,24 @@ class Home extends Component {
       const rowPos = (BOARD_SIZE - 1) - row;
       for (let col = 0; col < BOARD_SIZE; col++) {
         const texture = this.getTextureByValue(board.getValueAt(row, col));
-        const piece = new Sprite(texture);
 
+        const piece = new Sprite(texture);
         piece.x = col * PIECE_SIZE;
         piece.y = rowPos * PIECE_SIZE;
         piece.interactive = true;
 
         piece.mousedown = (e) => {
+          if (board.result) {
+            return;
+          }
+
+          if (connect4.playingNow !== RED_TURN) {
+            return;
+          }
+
           const { target } = e;
 
-          switch (connect4.playingNow) {
-            default:
-            case RED_TURN:
-              this.props.dispatch(playWithRed(target.col));
-              break;
-            case YELLOW_TURN:
-              this.props.dispatch(playWithYellow(target.col));
-              break;
-          }
+          this.props.dispatch(playWithRed(target.col));
 
           this.renderPIXIBoard();
         };
@@ -94,7 +102,6 @@ class Home extends Component {
         piece.row = row;
         piece.col = col;
 
-        // Add the rocket to the stage
         stage.addChild(piece);
       }
     }
@@ -102,8 +109,13 @@ class Home extends Component {
 
   render () {
     const { connect4 } = this.props;
+    const { board, playingNow } = connect4;
 
     console.log('props', connect4);
+
+    if (playingNow === YELLOW_TURN && !board.result) {
+      this.playWithYellow();
+    }
 
     // return (
     //   <div className="app-page page-home">
@@ -114,7 +126,7 @@ class Home extends Component {
     //   </div>
     // );
 
-    this.renderPIXIBoard(stage);
+    this.renderPIXIBoard();
 
     if (!document.getElementsByTagName('canvas').length) {
       document.body.appendChild(renderer.view);
