@@ -12,19 +12,18 @@ import {
   playWithYellow,
 } from '../actions/connect4';
 import { RED_TURN, YELLOW_TURN } from '../reducers/connect4';
-import { BOARD_SIZE, PIECE_SIZE } from '../domain/board';
+import { BOARD_PADDING, BOARD_SIZE, PIECE_SIZE } from '../domain/board';
 
 import '../scripts/pixi.min.js';
 
-const boardPadding = 150;
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
 const Texture = PIXI.Texture;
 const Text = PIXI.Text;
 const size = PIECE_SIZE * BOARD_SIZE;
-const renderer = new WebGLRenderer(size + boardPadding, size + boardPadding);
+const renderer = new WebGLRenderer(size + BOARD_PADDING, size + BOARD_PADDING);
 const stage = new Container();
-
+let test = 0;
 
 class Home extends Component {
 
@@ -36,6 +35,7 @@ class Home extends Component {
     }
 
     const animate = () => {
+      this.animatePiece();
       renderer.render(stage);
       requestAnimationFrame(animate);
     };
@@ -109,22 +109,79 @@ class Home extends Component {
     stage.addChild(text);
   }
 
+  animatePiece () {
+    const { connect4 } = this.props;
+    const { board, playingNow } = connect4;
+    const { animatedPiece } = board;
+
+    if (!board.animating) {
+      return;
+    }
+
+    if (animatedPiece === null) {
+      return;
+    }
+
+    let pieceSprite = stage.getChildByName(animatedPiece.name);
+    if (pieceSprite === null) {
+      return;
+    }
+
+    if (!pieceSprite.movingDirection) {
+      pieceSprite.movingDirection = {
+        from: {
+          x: animatedPiece.from.x,
+          y: animatedPiece.from.y,
+        },
+        to: {
+          x: animatedPiece.to.x,
+          y: animatedPiece.to.y,
+        }
+      };
+      console.log('here', pieceSprite.movingDirection)
+      test = pieceSprite.movingDirection.from.y;
+      pieceSprite.x = pieceSprite.movingDirection.from.x;
+      pieceSprite.y = pieceSprite.movingDirection.from.y;
+
+      stage.removeChild(pieceSprite);
+      stage.addChild(pieceSprite);
+    }
+
+    if (test > pieceSprite.movingDirection.to.y) {
+      delete pieceSprite.movingDirection;
+      board.animating = false;
+
+      if (playingNow === YELLOW_TURN && !board.result) {
+        this.playWithYellow();
+      }
+      return;
+    }
+
+    console.log('animate')
+    pieceSprite.x = pieceSprite.movingDirection.from.x;
+    pieceSprite.y = test;
+
+    test+=5;
+  }
+
   renderPIXIBoard () {
     const { connect4 } = this.props;
     const { board } = connect4;
     const Sprite = PIXI.Sprite;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
-      const rowPos = (BOARD_SIZE - 1) - row;
       for (let col = 0; col < BOARD_SIZE; col++) {
+        const piece = board.getPieceAt(row, col);
         const texture = this.getTextureByValue(board.getValueAt(row, col));
+        const pieceSprite = new Sprite(texture);
 
-        const piece = new Sprite(texture);
-        piece.x = boardPadding / 2 + col * PIECE_SIZE;
-        piece.y = boardPadding / 2 + rowPos * PIECE_SIZE;
-        piece.interactive = true;
-
-        piece.mousedown = (e) => {
+        pieceSprite.x = piece.x;
+        pieceSprite.y = piece.y;
+        pieceSprite.row = row;
+        pieceSprite.col = col;
+        pieceSprite.name = piece.name;
+        pieceSprite.interactive = true;
+        pieceSprite.mousedown = (e) => {
           if (board.result) {
             return;
           }
@@ -138,15 +195,11 @@ class Home extends Component {
           this.renderPIXIBoard();
         };
 
-        piece.row = row;
-        piece.col = col;
-        piece.name = `piece${row}${col}`;
-
-        const child = stage.getChildByName(piece.name);
+        const child = stage.getChildByName(pieceSprite.name);
         if (child !== null) {
           stage.removeChild(child);
         }
-        stage.addChild(piece);
+        stage.addChild(pieceSprite);
       }
     }
   }
@@ -157,9 +210,9 @@ class Home extends Component {
 
     console.log('props', connect4);
 
-    if (playingNow === YELLOW_TURN && !board.result) {
-      this.playWithYellow();
-    }
+    // if (playingNow === YELLOW_TURN && !board.result) {
+    //   this.playWithYellow();
+    // }
 
     this.renderPIXIBoard();
     this.renderButton(board);
