@@ -18,12 +18,13 @@ import '../scripts/pixi.min.js';
 
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
+const Sprite = PIXI.Sprite;
 const Texture = PIXI.Texture;
 const Text = PIXI.Text;
 const size = PIECE_SIZE * BOARD_SIZE;
 const renderer = new WebGLRenderer(size + BOARD_PADDING, size + BOARD_PADDING);
 const stage = new Container();
-let test = 0;
+let animOffset = 0;
 
 class Home extends Component {
 
@@ -45,8 +46,10 @@ class Home extends Component {
 
   onBoardClick (col) {
     const { connect4 } = this.props;
+    const { board, playingNow } = connect4;
+    const { isAnimating } = board;
 
-    if (connect4.playingNow !== RED_TURN) {
+    if (playingNow !== RED_TURN || isAnimating) {
       return;
     }
 
@@ -82,6 +85,50 @@ class Home extends Component {
     }, 500);
   }
 
+  animatePiece () {
+    const { connect4 } = this.props;
+    const { board, playingNow } = connect4;
+    const { animatedPiece, isAnimating } = board;
+
+    if (!isAnimating || animatedPiece === null) {
+      return;
+    }
+
+    let pieceSprite = stage.getChildByName(animatedPiece.name);
+    if (pieceSprite === null) {
+      const texture = this.getTextureByValue(animatedPiece.value);
+      pieceSprite = new Sprite(texture);
+      stage.addChild(pieceSprite);
+    }
+
+    if (!pieceSprite.movingDirection) {
+      pieceSprite.movingDirection = {
+        from: animatedPiece.from,
+        to: animatedPiece.to,
+      };
+
+      animOffset = pieceSprite.movingDirection.from.y;
+      pieceSprite.name = animatedPiece.name;
+      pieceSprite.x = pieceSprite.movingDirection.from.x;
+      pieceSprite.y = pieceSprite.movingDirection.from.y;
+    }
+
+    if (animOffset > pieceSprite.movingDirection.to.y) {
+      delete pieceSprite.movingDirection;
+      board.isAnimating = false;
+
+      if (playingNow === YELLOW_TURN && !board.result) {
+        this.playWithYellow();
+      }
+      return;
+    }
+
+    pieceSprite.x = pieceSprite.movingDirection.from.x;
+    pieceSprite.y = animOffset;
+
+    animOffset += 10;
+  }
+
   renderButton ({ result }) {
     const buttonName = `btnNewGame`;
 
@@ -109,72 +156,21 @@ class Home extends Component {
     stage.addChild(text);
   }
 
-  animatePiece () {
-    const { connect4 } = this.props;
-    const { board, playingNow } = connect4;
-    const { animatedPiece } = board;
-
-    if (!board.animating) {
-      return;
-    }
-
-    if (animatedPiece === null) {
-      return;
-    }
-
-    let pieceSprite = stage.getChildByName(animatedPiece.name);
-    if (pieceSprite === null) {
-      return;
-    }
-
-    if (!pieceSprite.movingDirection) {
-      pieceSprite.movingDirection = {
-        from: {
-          x: animatedPiece.from.x,
-          y: animatedPiece.from.y,
-        },
-        to: {
-          x: animatedPiece.to.x,
-          y: animatedPiece.to.y,
-        }
-      };
-      console.log('here', pieceSprite.movingDirection)
-      test = pieceSprite.movingDirection.from.y;
-      pieceSprite.x = pieceSprite.movingDirection.from.x;
-      pieceSprite.y = pieceSprite.movingDirection.from.y;
-
-      stage.removeChild(pieceSprite);
-      stage.addChild(pieceSprite);
-    }
-
-    if (test > pieceSprite.movingDirection.to.y) {
-      delete pieceSprite.movingDirection;
-      board.animating = false;
-
-      if (playingNow === YELLOW_TURN && !board.result) {
-        this.playWithYellow();
-      }
-      return;
-    }
-
-    console.log('animate')
-    pieceSprite.x = pieceSprite.movingDirection.from.x;
-    pieceSprite.y = test;
-
-    test+=5;
-  }
-
   renderPIXIBoard () {
     const { connect4 } = this.props;
     const { board } = connect4;
-    const Sprite = PIXI.Sprite;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const piece = board.getPieceAt(row, col);
-        const texture = this.getTextureByValue(board.getValueAt(row, col));
-        const pieceSprite = new Sprite(texture);
+        const pieceValue = board.getValueAt(row, col);
 
+        let texture = this.getTextureByValue(pieceValue);
+        if (board.isAnimatedPiece(row, col)) {
+          texture = this.getTextureByValue(0);
+        }
+
+        const pieceSprite = new Sprite(texture);
         pieceSprite.x = piece.x;
         pieceSprite.y = piece.y;
         pieceSprite.row = row;
@@ -182,15 +178,17 @@ class Home extends Component {
         pieceSprite.name = piece.name;
         pieceSprite.interactive = true;
         pieceSprite.mousedown = (e) => {
-          if (board.result) {
-            return;
-          }
-
-          if (connect4.playingNow !== RED_TURN) {
-            return;
-          }
-
           const { target } = e;
+          const { isAnimating, result } = board;
+
+          if (result) {
+            return;
+          }
+
+          if (connect4.playingNow !== RED_TURN || isAnimating) {
+            return;
+          }
+
           this.props.dispatch(playWithRed(target.col));
           this.renderPIXIBoard();
         };
@@ -206,13 +204,9 @@ class Home extends Component {
 
   render () {
     const { connect4 } = this.props;
-    const { board, playingNow } = connect4;
+    const { board } = connect4;
 
     console.log('props', connect4);
-
-    // if (playingNow === YELLOW_TURN && !board.result) {
-    //   this.playWithYellow();
-    // }
 
     this.renderPIXIBoard();
     this.renderButton(board);

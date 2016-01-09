@@ -17,7 +17,7 @@ export default class Board {
     this.pieces = { };
     this.result = null;
     this.animatedPiece = null;
-    this.animating = false;
+    this.isAnimating = false;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       const rowPos = (BOARD_SIZE - 1) - row;
@@ -57,7 +57,7 @@ export default class Board {
   }
 
   playAtColWithValue (col, value) {
-    this.animating = true;
+    this.isAnimating = true;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       const pos = `${row}${col}`;
@@ -69,7 +69,9 @@ export default class Board {
       this.pieces[pos].value = value;
 
       this.animatedPiece = {
-        name: `piece${pos}`,
+        row,
+        col,
+        name: `animatedPiece${pos}`,
         value,
         from: {
           row: 0,
@@ -88,6 +90,12 @@ export default class Board {
     }
 
     this.checkResult(value);
+  }
+
+  isAnimatedPiece (row, col) {
+    return this.isAnimating &&
+      this.animatedPiece.row === row &&
+      this.animatedPiece.col === col;
   }
 
   gameHasFinishedHorizontally (x, y, value) {
