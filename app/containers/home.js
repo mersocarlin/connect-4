@@ -55,6 +55,24 @@ class Home extends Component {
     this.props.dispatch(playWithRed(col));
   }
 
+  onPieceMouseDown (e) {
+    const { connect4 } = this.props;
+    const { board } = connect4;
+    const { target } = e;
+    const { isAnimating, result } = board;
+    const { playingNow } = connect4;
+
+    if (result) {
+      return;
+    }
+
+    if (playingNow !== RED_TURN || isAnimating) {
+      return;
+    }
+
+    this.props.dispatch(playWithRed(target.col));
+  }
+
   getTextureByValue (type) {
     let img;
 
@@ -74,6 +92,7 @@ class Home extends Component {
         break;
     }
 
+    /* eslint-disable new-cap  */
     return new Texture.fromImage(img);
   }
 
@@ -195,19 +214,7 @@ class Home extends Component {
         pieceSprite.interactive = true;
         pieceSprite.visible = true;
         pieceSprite.mousedown = (e) => {
-          const { target } = e;
-          const { isAnimating, result } = board;
-          const { playingNow } = connect4;
-
-          if (result) {
-            return;
-          }
-
-          if (playingNow !== RED_TURN || isAnimating) {
-            return;
-          }
-
-          this.props.dispatch(playWithRed(target.col));
+          this.onPieceMouseDown(e);
         };
         stage.addChild(pieceSprite);
       }
@@ -215,10 +222,9 @@ class Home extends Component {
   }
 
   render () {
-    const { connect4 } = this.props;
-
-    console.log('props', connect4);
-    console.log(stage, `children: ${stage.children.length}`);
+    // const { connect4 } = this.props;
+    // console.log('props', connect4);
+    // console.log(stage, `children: ${stage.children.length}`);
     this.renderPIXIBoard();
 
     return (
