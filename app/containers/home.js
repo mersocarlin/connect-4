@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import PIXI from 'pixi.js';
 
 import greenIMG from '../img/green.png';
 import redIMG from '../img/red.png';
@@ -14,7 +15,6 @@ import {
 import { RED_TURN, YELLOW_TURN } from '../reducers/connect4';
 import { BOARD_PADDING, BOARD_SIZE, PIECE_SIZE } from '../domain/board';
 
-import '../scripts/pixi.min.js';
 
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
