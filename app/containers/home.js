@@ -20,6 +20,7 @@ const boardPadding = 150;
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
 const Texture = PIXI.Texture;
+const Text = PIXI.Text;
 const size = PIECE_SIZE * BOARD_SIZE;
 const renderer = new WebGLRenderer(size + boardPadding, size + boardPadding);
 const stage = new Container();
@@ -40,19 +41,6 @@ class Home extends Component {
     };
 
     requestAnimationFrame(animate);
-
-    this.setupButton();
-  }
-
-  setupButton () {
-    const text = new PIXI.Text('New Game', { font : '20px Arial', fill : 0xffffff, align : 'center' });
-    text.x = 20;
-    text.y = 20;
-    text.interactive = true;
-    text.click = () => {
-      this.props.dispatch(newGame());
-    }
-    stage.addChild(text);
   }
 
   onBoardClick (col) {
@@ -94,6 +82,33 @@ class Home extends Component {
     }, 500);
   }
 
+  renderButton ({ result }) {
+    const buttonName = `btnNewGame`;
+
+    if (!result) {
+      const child = stage.getChildByName(buttonName);
+      if (child !== null) {
+        stage.removeChild(child);
+      }
+      return;
+    }
+
+    const textStyle = {
+      font: '20px Arial',
+      fill: 0xffffff,
+      align: 'center',
+    };
+    const text = new Text('New Game', textStyle);
+    text.x = 20;
+    text.y = 20;
+    text.interactive = true;
+    text.name = `btnNewGame`;
+    text.click = () => {
+      this.props.dispatch(newGame());
+    };
+    stage.addChild(text);
+  }
+
   renderPIXIBoard () {
     const { connect4 } = this.props;
     const { board } = connect4;
@@ -119,15 +134,18 @@ class Home extends Component {
           }
 
           const { target } = e;
-
           this.props.dispatch(playWithRed(target.col));
-
           this.renderPIXIBoard();
         };
 
         piece.row = row;
         piece.col = col;
+        piece.name = `piece${row}${col}`;
 
+        const child = stage.getChildByName(piece.name);
+        if (child !== null) {
+          stage.removeChild(child);
+        }
         stage.addChild(piece);
       }
     }
@@ -143,16 +161,8 @@ class Home extends Component {
       this.playWithYellow();
     }
 
-    // return (
-    //   <div className="app-page page-home">
-    //     <Board
-    //       board={connect4.board}
-    //       onClick={this.onBoardClick.bind(this)}
-    //     />
-    //   </div>
-    // );
-
     this.renderPIXIBoard();
+    this.renderButton(board);
 
     return (
       <div className="app-page page-home">
