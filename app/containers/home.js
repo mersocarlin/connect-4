@@ -52,7 +52,6 @@ class Home extends Component {
     if (playingNow !== RED_TURN || isAnimating) {
       return;
     }
-
     this.props.dispatch(playWithRed(col));
   }
 
@@ -95,10 +94,13 @@ class Home extends Component {
     }
 
     let pieceSprite = stage.getChildByName(animatedPiece.name);
+    const texture = this.getTextureByValue(animatedPiece.value);
+
     if (pieceSprite === null) {
-      const texture = this.getTextureByValue(animatedPiece.value);
       pieceSprite = new Sprite(texture);
       stage.addChild(pieceSprite);
+    } else {
+      pieceSprite.texture = texture;
     }
 
     if (!pieceSprite.movingDirection) {
@@ -110,12 +112,17 @@ class Home extends Component {
       animOffset = pieceSprite.movingDirection.from.y;
       pieceSprite.name = animatedPiece.name;
       pieceSprite.x = pieceSprite.movingDirection.from.x;
-      pieceSprite.y = pieceSprite.movingDirection.from.y;
     }
 
     if (animOffset > pieceSprite.movingDirection.to.y) {
       delete pieceSprite.movingDirection;
       board.isAnimating = false;
+
+      if (board.gameHasFinished(animatedPiece.value)) {
+        this.renderButton(board);
+        this.renderPIXIBoard();
+        return;
+      }
 
       if (playingNow === YELLOW_TURN && !board.result) {
         this.playWithYellow();
@@ -123,21 +130,18 @@ class Home extends Component {
       return;
     }
 
-    pieceSprite.x = pieceSprite.movingDirection.from.x;
+    pieceSprite.visible = true;
     pieceSprite.y = animOffset;
 
     animOffset += 10;
   }
 
-  renderButton ({ result }) {
+  renderButton () {
     const buttonName = `btnNewGame`;
 
-    if (!result) {
-      const child = stage.getChildByName(buttonName);
-      if (child !== null) {
-        stage.removeChild(child);
-      }
-      return;
+    let text = stage.getChildByName(buttonName);
+    if (text !== null) {
+      stage.removeChild(text);
     }
 
     const textStyle = {
@@ -145,12 +149,20 @@ class Home extends Component {
       fill: 0xffffff,
       align: 'center',
     };
-    const text = new Text('New Game', textStyle);
+
+    text = new Text('New Game', textStyle);
     text.x = 20;
     text.y = 20;
+    text.visible = true;
     text.interactive = true;
-    text.name = `btnNewGame`;
+    text.name = buttonName;
     text.click = () => {
+      stage.children
+        .filter(item =>
+          item.name === buttonName ||
+          item.name.indexOf('animatedPiece') !== -1)
+        .forEach(item => stage.removeChild(item));
+
       this.props.dispatch(newGame());
     };
     stage.addChild(text);
@@ -163,40 +175,40 @@ class Home extends Component {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const piece = board.getPieceAt(row, col);
-        const pieceValue = board.getValueAt(row, col);
+        const pieceValue = piece.value;
 
         let texture = this.getTextureByValue(pieceValue);
         if (board.isAnimatedPiece(row, col)) {
           texture = this.getTextureByValue(0);
         }
 
-        const pieceSprite = new Sprite(texture);
+        let pieceSprite = stage.getChildByName(piece.name);
+        if (pieceSprite !== null) {
+          stage.removeChild(pieceSprite);
+        }
+        pieceSprite = new Sprite(texture);
         pieceSprite.x = piece.x;
         pieceSprite.y = piece.y;
         pieceSprite.row = row;
         pieceSprite.col = col;
         pieceSprite.name = piece.name;
         pieceSprite.interactive = true;
+        pieceSprite.visible = true;
         pieceSprite.mousedown = (e) => {
           const { target } = e;
           const { isAnimating, result } = board;
+          const { playingNow } = connect4;
 
           if (result) {
             return;
           }
 
-          if (connect4.playingNow !== RED_TURN || isAnimating) {
+          if (playingNow !== RED_TURN || isAnimating) {
             return;
           }
 
           this.props.dispatch(playWithRed(target.col));
-          this.renderPIXIBoard();
         };
-
-        const child = stage.getChildByName(pieceSprite.name);
-        if (child !== null) {
-          stage.removeChild(child);
-        }
         stage.addChild(pieceSprite);
       }
     }
@@ -204,12 +216,10 @@ class Home extends Component {
 
   render () {
     const { connect4 } = this.props;
-    const { board } = connect4;
 
     console.log('props', connect4);
-
+    console.log(stage, `children: ${stage.children.length}`);
     this.renderPIXIBoard();
-    this.renderButton(board);
 
     return (
       <div className="app-page page-home">

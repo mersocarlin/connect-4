@@ -36,24 +36,8 @@ export default class Board {
     }
   }
 
-  getValueAt (row, col) {
-    if (this.isInResult(row, col)) {
-      return 3;
-    }
-
-    return this.pieces[`${row}${col}`].value;
-  }
-
   getPieceAt (row, col) {
     return this.pieces[`${row}${col}`];
-  }
-
-  isInResult (row, col) {
-    if (!this.result) {
-      return false;
-    }
-
-    return this.result.find(obj => obj.row === row && obj.col === col);
   }
 
   playAtColWithValue (col, value) {
@@ -88,8 +72,6 @@ export default class Board {
       };
       break;
     }
-
-    this.checkResult(value);
   }
 
   isAnimatedPiece (row, col) {
@@ -200,39 +182,45 @@ export default class Board {
     return null;
   }
 
-  checkResult (value) {
+  gameHasFinished (value) {
     this.result = null;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         this.result = this.gameHasFinishedHorizontally(row, col, value);
         if (this.result) {
-          // console.log(this.pieces);
-          // console.log(`horizontally; ${this.result} = ${value}`);
-          return;
+          this.updateResults();
+          return true;
         }
 
         this.result = this.gameHasFinishedVertically(row, col, value);
         if (this.result) {
-          // console.log(this.pieces);
-          // console.log(`vertically; ${this.result} = ${value}`);
-          return;
+          this.updateResults();
+          return true;
         }
 
         this.result = this.gameHasFinishedDiagonallyAsc(row, col, value);
         if (this.result) {
-          // console.log(this.pieces);
-          // console.log(`diagonally1; ${this.result} = ${value}`);
-          return;
+          this.updateResults();
+          return true;
         }
 
         this.result = this.gameHasFinishedDiagonallyDesc(row, col, value);
         if (this.result) {
-          // console.log(this.pieces);
-          // console.log(`diagonally2; ${this.result} = ${value}`);
-          return;
+          this.updateResults();
+          return true;
         }
       }
     }
+    return false;
+  }
+
+  updateResults () {
+    this.result.forEach(item => {
+      const { row, col } = item;
+      const pos = `${row}${col}`;
+
+      this.pieces[pos].value = 3;
+    });
   }
 }
