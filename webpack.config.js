@@ -19,8 +19,7 @@ module.exports = {
     new webpack.NoErrorsPlugin(),
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-        'LANGUAGE': JSON.stringify(process.env.LANGUAGE || 'en-US')
+        'NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
       }
     })
   ],
