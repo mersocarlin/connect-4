@@ -1,4 +1,4 @@
-import { assert } from 'chai';
+import { expect } from 'chai';
 
 import { RED_TURN, YELLOW_TURN } from '../app/reducers/connect4';
 import Board, { BOARD_SIZE } from '../app/domain/board';
@@ -10,7 +10,14 @@ describe('Board', () => {
   describe('initiate', () => {
     it('should initiate board game', () => {
       board.initiate();
-      assert.equal(Object.keys(board.pieces).length, BOARD_SIZE * BOARD_SIZE);
+      expect(board).to.have.property('pieces');
+      expect(board).to.have.property('result');
+      expect(board).to.have.property('animatedPiece');
+      expect(board).to.have.property('isAnimating');
+      expect(Object.keys(board.pieces)).to.have.length(BOARD_SIZE * BOARD_SIZE)
+      expect(board.result).to.be.equal(null);
+      expect(board.animatedPiece).to.be.equal(null);
+      expect(board.isAnimating).to.be.equal(false);
     })
   });
 
@@ -19,27 +26,53 @@ describe('Board', () => {
       board.initiate();
       board.playAtColWithValue(0, RED_TURN);
 
-      assert.equal(board.getPieceAt(0, 0).value, RED_TURN);
+      expect(board.getPieceAt(0, 0)).to.have.property('value');
+      expect(board.getPieceAt(0 ,0).value).to.be.equal(RED_TURN);
     });
   });
 
   describe('animatedPiece', () => {
-    it(`should have animatedPiece with row = 0,  col = 0 and value = ${RED_TURN}`, () => {
+    it(`should have animatedPiece with row = 0, col = 0 and value = ${RED_TURN}`, () => {
       board.initiate();
       board.playAtColWithValue(0, RED_TURN);
 
       const { animatedPiece } = board;
-      assert.equal(animatedPiece.row, 0);
-      assert.equal(animatedPiece.col, 0);
-      assert.equal(animatedPiece.value, RED_TURN);
+
+      expect(animatedPiece).to.have.property('row');
+      expect(animatedPiece).to.have.property('col');
+      expect(animatedPiece).to.have.property('value');
+      expect(animatedPiece.row).to.be.equal(0);
+      expect(animatedPiece.col).to.be.equal(0);
+      expect(animatedPiece.value).to.be.equal(RED_TURN);
     });
 
     it('should return true as animated piece for row = 0 and col = 0', () => {
-      assert.equal(board.isAnimatedPiece(0, 0), true);
+      expect(board.isAnimatedPiece(0, 0)).to.be.equal(true);
     });
 
     it('should return false as animated piece for row = 0 and col = 1', () => {
-      assert.equal(board.isAnimatedPiece(0, 1), false);
+      expect(board.isAnimatedPiece(0, 1)).to.be.equal(false);
+    });
+  });
+
+  describe('canPlayAt', () => {
+    it('should be able to play at col 0', () => {
+      board.initiate();
+
+      expect(board.canPlayAt(0)).to.be.equal(true);
+    });
+
+    it('should not be able to play at col 0', () => {
+      board.initiate();
+      board.playAtColWithValue(0, RED_TURN);
+      board.playAtColWithValue(0, YELLOW_TURN);
+      board.playAtColWithValue(0, RED_TURN);
+      board.playAtColWithValue(0, YELLOW_TURN);
+      board.playAtColWithValue(0, RED_TURN);
+      board.playAtColWithValue(0, YELLOW_TURN);
+      board.playAtColWithValue(0, RED_TURN);
+
+      expect(board.canPlayAt(0)).to.be.equal(false);
     });
   });
 
@@ -54,7 +87,14 @@ describe('Board', () => {
       board.playAtColWithValue(2, YELLOW_TURN);
       board.playAtColWithValue(3, RED_TURN);
 
-      assert.equal(board.gameHasFinished(RED_TURN), true);
+      const expected = board.gameHasFinished(RED_TURN);
+      const { result } = board;
+
+      expect(expected).to.be.equal(true);
+      expect(result).to.have.property('type');
+      expect(result).to.have.property('game');
+      expect(result.type).to.be.equal(RED_TURN);
+      expect(result.game).to.have.length(4);
     });
 
     it('should finish game horizontally', () => {
@@ -67,7 +107,7 @@ describe('Board', () => {
       board.playAtColWithValue(2, YELLOW_TURN);
       board.playAtColWithValue(3, RED_TURN);
 
-      assert.equal(board.gameHasFinishedHorizontally(0, 0, RED_TURN) != null, true);
+      expect(board.gameHasFinishedHorizontally(0, 0, RED_TURN)).to.not.be.equal(null);
     });
 
     it('should finish game vertically', () => {
@@ -80,7 +120,7 @@ describe('Board', () => {
       board.playAtColWithValue(1, YELLOW_TURN);
       board.playAtColWithValue(0, RED_TURN);
 
-      assert.equal(board.gameHasFinishedVertically(0, 0, RED_TURN) != null, true);
+      expect(board.gameHasFinishedVertically(0, 0, RED_TURN)).to.not.be.equal(null);
     });
 
     it('should finish game gameHasFinishedDiagonallyAsc', () => {
@@ -96,7 +136,8 @@ describe('Board', () => {
       board.playAtColWithValue(3, RED_TURN);
       board.playAtColWithValue(4, YELLOW_TURN);
       board.playAtColWithValue(3, RED_TURN);
-      assert.equal(board.gameHasFinishedDiagonallyAsc(0, 0, RED_TURN) != null, true);
+
+      expect(board.gameHasFinishedDiagonallyAsc(0, 0, RED_TURN)).to.not.be.equal(null);
     });
 
     it('should finish game gameHasFinishedDiagonallyDesc', () => {
@@ -112,7 +153,8 @@ describe('Board', () => {
       board.playAtColWithValue(3, RED_TURN);
       board.playAtColWithValue(2, YELLOW_TURN);
       board.playAtColWithValue(3, RED_TURN);
-      assert.equal(board.gameHasFinishedDiagonallyDesc(0, 6, RED_TURN) != null, true);
+
+      expect(board.gameHasFinishedDiagonallyDesc(0, 6, RED_TURN)).to.not.be.equal(null);
     });
   });
 });
