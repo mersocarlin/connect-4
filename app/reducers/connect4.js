@@ -1,4 +1,5 @@
 import {
+  NEW_GAME,
   PLAY_WITH_RED,
   PLAY_WITH_YELLOW,
 } from '../actions/connect4';
@@ -15,10 +16,18 @@ const initialState = {
 };
 
 export default function counter (state = initialState, action) {
+  const { board } = state;
+
   switch (action.type) {
+    case NEW_GAME:
+      board.initiate();
+
+      return {
+        ...initialState,
+        board,
+      };
     case PLAY_WITH_RED:
     case PLAY_WITH_YELLOW:
-      const { board } = state;
       const value = action.type === PLAY_WITH_RED ? RED_TURN : YELLOW_TURN;
 
       board.playAtColWithValue(action.col, value);

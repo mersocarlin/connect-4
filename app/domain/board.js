@@ -1,50 +1,114 @@
 
+export const BOARD_PADDING = 200;
 export const BOARD_SIZE = 7;
 export const FINISH_SIZE = 4;
+export const PIECE_SIZE = 80;
 
 export default class Board {
   constructor () {
     this.initiate();
   }
 
+  getRelativePosition (val) {
+    return BOARD_PADDING / 2 + val * PIECE_SIZE;
+  }
+
   initiate () {
     this.pieces = { };
+    this.result = null;
+    this.animatedPiece = null;
+    this.isAnimating = false;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
+      const rowPos = (BOARD_SIZE - 1) - row;
       for (let col = 0; col < BOARD_SIZE; col++) {
-        this.pieces[`${row}${col}`] = 0;
+        const pos = `${row}${col}`;
+
+        this.pieces[pos] = {
+          name: `piece${pos}`,
+          row,
+          col,
+          x: this.getRelativePosition(col),
+          y: this.getRelativePosition(rowPos),
+          value: 0,
+        };
       }
     }
   }
 
-  getValueAt (row, col) {
+  getPieceAt (row, col) {
     return this.pieces[`${row}${col}`];
   }
 
-  playAtColWithValue (col, value) {
+  canPlayAt (col) {
     for (let row = 0; row < BOARD_SIZE; row++) {
       const pos = `${row}${col}`;
 
-      if (this.pieces[pos] === 0) {
-        this.pieces[pos] = value;
-        break;
+      if (this.pieces[pos].value !== 0) {
+        continue;
       }
+
+      return true;
     }
 
-    this.gameIsFinished(value);
+    return false;
   }
 
-  gameIsFinishedHorizontally (x, y, value) {
+  playAtColWithValue (col, value) {
+    this.isAnimating = true;
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      const pos = `${row}${col}`;
+
+      if (this.pieces[pos].value !== 0) {
+        continue;
+      }
+
+      this.pieces[pos].value = value;
+
+      this.animatedPiece = {
+        row,
+        col,
+        name: `animatedPiece${pos}`,
+        value,
+        from: {
+          row: 0,
+          col,
+          x: this.getRelativePosition(col),
+          y: this.getRelativePosition(0),
+        },
+        to: {
+          row,
+          col,
+          x: this.getRelativePosition(col),
+          y: this.getRelativePosition(BOARD_SIZE - 1 - row),
+        },
+      };
+      break;
+    }
+  }
+
+  isAnimatedPiece (row, col) {
+    return this.isAnimating &&
+      this.animatedPiece.row === row &&
+      this.animatedPiece.col === col;
+  }
+
+  gameHasFinishedHorizontally (x, y, value) {
     const result = [];
 
     for (let col = y; col < BOARD_SIZE; col++) {
       const pos = `${x}${col}`;
 
-      if (this.pieces[pos] !== value) {
+      if (this.pieces[pos].value !== value) {
         return null;
       }
 
-      result.push(pos);
+      result.push({
+        row: x,
+        col,
+        value,
+      });
 
       if (result.length === FINISH_SIZE) {
         return result;
@@ -54,17 +118,21 @@ export default class Board {
     return null;
   }
 
-  gameIsFinishedVertically (x, y, value) {
+  gameHasFinishedVertically (x, y, value) {
     const result = [];
 
     for (let row = x; row < BOARD_SIZE; row++) {
       const pos = `${row}${y}`;
 
-      if (this.pieces[pos] !== value) {
+      if (this.pieces[pos].value !== value) {
         return null;
       }
 
-      result.push(pos);
+      result.push({
+        row,
+        col: y,
+        value,
+      });
 
       if (result.length === FINISH_SIZE) {
         return result;
@@ -74,19 +142,23 @@ export default class Board {
     return null;
   }
 
-  gameIsFinishedDiagonallyAsc (x, y, value) {
+  gameHasFinishedDiagonallyAsc (x, y, value) {
     const result = [];
     let row = x;
     let col = y;
 
-    while (row < BOARD_SIZE || col < BOARD_SIZE) {
+    while (row < BOARD_SIZE && col < BOARD_SIZE) {
       const pos = `${row}${col}`;
 
-      if (this.pieces[pos] !== value) {
+      if (this.pieces[pos].value !== value) {
         return null;
       }
 
-      result.push(pos);
+      result.push({
+        row,
+        col,
+        value,
+      });
 
       if (result.length === FINISH_SIZE) {
         return result;
@@ -99,72 +171,89 @@ export default class Board {
     return null;
   }
 
-  gameIsFinishedDiagonallyDesc (x, y, value) {
+  gameHasFinishedDiagonallyDesc (x, y, value) {
     const result = [];
     let row = x;
     let col = y;
 
-    while (row >= 0 || col >= 0) {
+    while (row < BOARD_SIZE && col >= 0) {
       const pos = `${row}${col}`;
 
-      if (this.pieces[pos] !== value) {
+      if (this.pieces[pos].value !== value) {
         return null;
       }
 
-      result.push(pos);
+      result.push({
+        row,
+        col,
+        value,
+      });
 
       if (result.length === FINISH_SIZE) {
         return result;
       }
 
-      row--;
+      row++;
       col--;
     }
 
     return null;
   }
 
-  gameIsFinished (value) {
-    let result = null;
+  gameHasFinished (value) {
+    let game;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
-      if (result) {
-        break;
-      }
-
       for (let col = 0; col < BOARD_SIZE; col++) {
-        result = this.gameIsFinishedHorizontally(row, col, value);
-        if (result) {
-          console.log(this.pieces);
-          console.log(`horizontally; ${result} = ${value}`);
-          break;
+        game = this.gameHasFinishedHorizontally(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
+          return true;
         }
 
-        result = this.gameIsFinishedVertically(row, col, value);
-        if (result) {
-          console.log(this.pieces);
-          console.log(`vertically; ${result} = ${value}`);
-          break;
+        game = this.gameHasFinishedVertically(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
+          return true;
         }
 
-        result = this.gameIsFinishedDiagonallyAsc(row, col, value);
-        if (result) {
-          console.log(this.pieces);
-          console.log(`diagonally1; ${result} = ${value}`);
-          break;
+        game = this.gameHasFinishedDiagonallyAsc(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
+          return true;
         }
 
-        result = this.gameIsFinishedDiagonallyDesc(row, col, value);
-        if (result) {
-          console.log(this.pieces);
-          console.log(`diagonally2; ${result} = ${value}`);
-          break;
+        game = this.gameHasFinishedDiagonallyDesc(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
+          return true;
         }
       }
     }
+
+    const isDraw = Object.keys(this.pieces)
+      .filter(key => this.pieces[key].value !== 0)
+      .length === 0;
+
+    if (isDraw) {
+      this.updateResults([], 0);
+      return true;
+    }
+
+    return false;
   }
 
-  getPieces () {
-    return this.pieces;
+  updateResults (game, type) {
+    game.forEach(item => {
+      const { row, col } = item;
+      const pos = `${row}${col}`;
+
+      this.pieces[pos].value = 3;
+    });
+
+    this.result = {
+      type,
+      game,
+    };
   }
 }

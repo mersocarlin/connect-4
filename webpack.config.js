@@ -19,11 +19,14 @@ module.exports = {
     new webpack.NoErrorsPlugin(),
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-        'LANGUAGE': JSON.stringify(process.env.LANGUAGE || 'en-US')
+        'NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
       }
     })
   ],
+
+  node: {
+		fs: 'empty'
+	},
 
   module: {
     loaders: [
@@ -54,7 +57,12 @@ module.exports = {
       {
         test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
         loader: "file-loader"
-      }
+      },
+      {
+				test: /\.json$/,
+				include: path.join(__dirname, 'node_modules', 'pixi.js'),
+				loader: 'json',
+			},
     ]
   }
 };

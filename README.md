@@ -13,6 +13,6 @@ This is a simple implementation of connect-4 game using ReactJS and Pixi.js.
 ```
 npm install
 npm run dev
-
-# enjoy ;)
 ```
+
+Access [http://localhost:8080](http://localhost:8080) and have fun ;)
