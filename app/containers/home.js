@@ -15,7 +15,6 @@ import {
 import { RED_TURN, YELLOW_TURN } from '../reducers/connect4';
 import { BOARD_PADDING, BOARD_SIZE, PIECE_SIZE } from '../domain/board';
 
-
 const WebGLRenderer = PIXI.WebGLRenderer;
 const Container = PIXI.Container;
 const Sprite = PIXI.Sprite;
@@ -24,7 +23,14 @@ const Text = PIXI.Text;
 const size = PIECE_SIZE * BOARD_SIZE;
 const renderer = new WebGLRenderer(size + BOARD_PADDING, size + BOARD_PADDING);
 const stage = new Container();
-let animOffset = 0;
+const TEXT_STYLE = {
+  font: '20px Arial',
+  fill: 0xffffff,
+  align: 'center',
+};
+const animOffset = 20;
+let animPosition = 0;
+
 
 class Home extends Component {
 
@@ -44,17 +50,6 @@ class Home extends Component {
     requestAnimationFrame(animate);
   }
 
-  onBoardClick (col) {
-    const { connect4 } = this.props;
-    const { board, playingNow } = connect4;
-    const { isAnimating } = board;
-
-    if (playingNow !== RED_TURN || isAnimating) {
-      return;
-    }
-    this.props.dispatch(playWithRed(col));
-  }
-
   onPieceMouseDown (e) {
     const { connect4 } = this.props;
     const { board } = connect4;
@@ -67,6 +62,10 @@ class Home extends Component {
     }
 
     if (playingNow !== RED_TURN || isAnimating) {
+      return;
+    }
+
+    if (!board.canPlayAt(target.col)) {
       return;
     }
 
@@ -96,9 +95,14 @@ class Home extends Component {
     return new Texture.fromImage(img);
   }
 
-  playWithYellow () {
+  playWithYellow (board) {
     setTimeout(() => {
       const col = Math.floor((Math.random() * BOARD_SIZE));
+      if (!board.canPlayAt(col)) {
+        this.playWithYellow(board);
+        return;
+      }
+
       this.props.dispatch(playWithYellow(col));
     }, 500);
   }
@@ -128,34 +132,70 @@ class Home extends Component {
         to: animatedPiece.to,
       };
 
-      animOffset = pieceSprite.movingDirection.from.y;
+      animPosition = pieceSprite.movingDirection.from.y;
       pieceSprite.name = animatedPiece.name;
       pieceSprite.x = pieceSprite.movingDirection.from.x;
     }
 
-    if (animOffset > pieceSprite.movingDirection.to.y) {
+    if (animPosition > pieceSprite.movingDirection.to.y) {
       delete pieceSprite.movingDirection;
       board.isAnimating = false;
 
       if (board.gameHasFinished(animatedPiece.value)) {
-        this.renderButton(board);
-        this.renderPIXIBoard();
+        this.renderNewGame(board);
+        this.renderPIXIBoard(connect4);
+        this.renderScore(connect4);
         return;
       }
 
       if (playingNow === YELLOW_TURN && !board.result) {
-        this.playWithYellow();
+        this.playWithYellow(board);
       }
       return;
     }
 
     pieceSprite.visible = true;
-    pieceSprite.y = animOffset;
+    pieceSprite.y = animPosition;
 
-    animOffset += 10;
+    animPosition += animOffset;
   }
 
-  renderButton () {
+  renderScore ({ board, playingNow }) {
+    const { result } = board;
+    const scoreName = `scoreElement`;
+
+    let score = stage.getChildByName(scoreName);
+    if (score !== null) {
+      stage.removeChild(score);
+    }
+
+    let text;
+    if (result) {
+      switch (result.type) {
+        default:
+        case 0:
+          text = 'Draw!';
+          break;
+        case RED_TURN:
+          text = 'You Win!';
+          break;
+        case YELLOW_TURN:
+          text = 'You Lose!';
+          break;
+      }
+    } else {
+      text = playingNow === RED_TURN ? `It's your turn.` : `Wait for player.`;
+    }
+
+    score = new Text(text, TEXT_STYLE);
+    score.x = size;
+    score.y = size + BOARD_PADDING / 2 + 20;
+    score.name = scoreName;
+
+    stage.addChild(score);
+  }
+
+  renderNewGame () {
     const buttonName = `btnNewGame`;
 
     let text = stage.getChildByName(buttonName);
@@ -163,13 +203,7 @@ class Home extends Component {
       stage.removeChild(text);
     }
 
-    const textStyle = {
-      font: '20px Arial',
-      fill: 0xffffff,
-      align: 'center',
-    };
-
-    text = new Text('New Game', textStyle);
+    text = new Text('New Game', TEXT_STYLE);
     text.x = 20;
     text.y = 20;
     text.visible = true;
@@ -187,10 +221,7 @@ class Home extends Component {
     stage.addChild(text);
   }
 
-  renderPIXIBoard () {
-    const { connect4 } = this.props;
-    const { board } = connect4;
-
+  renderPIXIBoard ({ board }) {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const piece = board.getPieceAt(row, col);
@@ -222,10 +253,11 @@ class Home extends Component {
   }
 
   render () {
-    // const { connect4 } = this.props;
+    const { connect4 } = this.props;
     // console.log('props', connect4);
     // console.log(stage, `children: ${stage.children.length}`);
-    this.renderPIXIBoard();
+    this.renderPIXIBoard(connect4);
+    this.renderScore(connect4);
 
     return (
       <div className="app-page page-home">

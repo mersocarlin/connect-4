@@ -40,6 +40,20 @@ export default class Board {
     return this.pieces[`${row}${col}`];
   }
 
+  canPlayAt (col) {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      const pos = `${row}${col}`;
+
+      if (this.pieces[pos].value !== 0) {
+        continue;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
   playAtColWithValue (col, value) {
     this.isAnimating = true;
 
@@ -93,6 +107,7 @@ export default class Board {
       result.push({
         row: x,
         col,
+        value,
       });
 
       if (result.length === FINISH_SIZE) {
@@ -116,6 +131,7 @@ export default class Board {
       result.push({
         row,
         col: y,
+        value,
       });
 
       if (result.length === FINISH_SIZE) {
@@ -141,6 +157,7 @@ export default class Board {
       result.push({
         row,
         col,
+        value,
       });
 
       if (result.length === FINISH_SIZE) {
@@ -169,6 +186,7 @@ export default class Board {
       result.push({
         row,
         col,
+        value,
       });
 
       if (result.length === FINISH_SIZE) {
@@ -183,44 +201,59 @@ export default class Board {
   }
 
   gameHasFinished (value) {
-    this.result = null;
+    let game;
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
-        this.result = this.gameHasFinishedHorizontally(row, col, value);
-        if (this.result) {
-          this.updateResults();
+        game = this.gameHasFinishedHorizontally(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
           return true;
         }
 
-        this.result = this.gameHasFinishedVertically(row, col, value);
-        if (this.result) {
-          this.updateResults();
+        game = this.gameHasFinishedVertically(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
           return true;
         }
 
-        this.result = this.gameHasFinishedDiagonallyAsc(row, col, value);
-        if (this.result) {
-          this.updateResults();
+        game = this.gameHasFinishedDiagonallyAsc(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
           return true;
         }
 
-        this.result = this.gameHasFinishedDiagonallyDesc(row, col, value);
-        if (this.result) {
-          this.updateResults();
+        game = this.gameHasFinishedDiagonallyDesc(row, col, value);
+        if (game) {
+          this.updateResults(game, value);
           return true;
         }
       }
     }
+
+    const isDraw = Object.keys(this.pieces)
+      .filter(key => this.pieces[key].value !== 0)
+      .length === 0;
+
+    if (isDraw) {
+      this.updateResults([], 0);
+      return true;
+    }
+
     return false;
   }
 
-  updateResults () {
-    this.result.forEach(item => {
+  updateResults (game, type) {
+    game.forEach(item => {
       const { row, col } = item;
       const pos = `${row}${col}`;
 
       this.pieces[pos].value = 3;
     });
+
+    this.result = {
+      type,
+      game,
+    };
   }
 }
