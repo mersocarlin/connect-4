@@ -21,10 +21,10 @@ const Sprite = PIXI.Sprite;
 const Texture = PIXI.Texture;
 const Text = PIXI.Text;
 const size = PIECE_SIZE * BOARD_SIZE;
-const renderer = new WebGLRenderer(size + BOARD_PADDING, size + BOARD_PADDING);
+const renderer = new WebGLRenderer(size + BOARD_PADDING, size + BOARD_PADDING + 200);
 const stage = new Container();
 const TEXT_STYLE = {
-  font: '20px Arial',
+  font: '20px Roboto',
   fill: 0xffffff,
   align: 'center',
 };
@@ -160,6 +160,63 @@ class Home extends Component {
     animPosition += animOffset;
   }
 
+  renderHeader () {
+    const headerName = `headerElement`;
+
+    let header = stage.getChildByName(headerName);
+    if (header !== null) {
+      stage.removeChild(header);
+    }
+
+    header = new Text('Connect-4', {
+      font: 'bold 40px Roboto',
+      fill: '#fff',
+      align: 'center',
+      stroke: '#34495e',
+      strokeThickness: 15,
+      lineJoin: 'round',
+    });
+
+    header.anchor.x = 0.5;
+    header.anchor.y = 1;
+    header.x = renderer.width / 2;
+    header.y = 70;
+    header.name = headerName;
+
+    stage.addChild(header);
+  }
+
+  renderFooter () {
+    const footerName = `footerElement`;
+
+    let footer = stage.getChildByName(footerName);
+    if (footer !== null) {
+      stage.removeChild(footer);
+    }
+
+    const textInstructions = `
+      Use your mouse to put red pieces into the board.
+      Your goal is to get four of them in a row
+      vertically, horizontally or diagonally.
+
+
+      https://github.com/mersocarlin/connect-4
+    `;
+
+    footer = new Text(textInstructions, {
+      font: 'italic 18px Roboto',
+      fill: '#fff',
+      align: 'center',
+    });
+    footer.anchor.x = 0.5;
+    footer.anchor.y = 1;
+    footer.x = renderer.width / 2;
+    footer.y = size + BOARD_PADDING + 150;
+    footer.name = footerName;
+
+    stage.addChild(footer);
+  }
+
   renderScore ({ board, playingNow }) {
     const { result } = board;
     const scoreName = `scoreElement`;
@@ -207,8 +264,8 @@ class Home extends Component {
     text.x = 20;
     text.y = 20;
     text.visible = true;
-    text.interactive = true;
     text.name = buttonName;
+    text.interactive = true;
     text.click = () => {
       stage.children
         .filter(item =>
@@ -256,8 +313,10 @@ class Home extends Component {
     const { connect4 } = this.props;
     // console.log('props', connect4);
     // console.log(stage, `children: ${stage.children.length}`);
+    this.renderHeader();
     this.renderPIXIBoard(connect4);
     this.renderScore(connect4);
+    this.renderFooter();
 
     return (
       <div className="app-page page-home">
